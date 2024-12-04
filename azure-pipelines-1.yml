@@ -1,5 +1,13 @@
-trigger: 
-- main
+trigger: none
+
+parameters:
+  - name: image
+    displayName: pool image
+    default: ubuntu-latest
+    type: string
+    values:
+      - windows-latest
+      - ubuntu-latest
 
 stages:
 - stage: Build
@@ -7,6 +15,7 @@ stages:
   - job: Build
     pool:
       vmImage: 'ubuntu-latest'
+
     steps:
     - task: TerraformTaskV4@4
       displayName: TF init
