@@ -1,0 +1,72 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+trigger: 
+- main
+
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: TerraformTaskV4@4
+      displayName: TF init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: 'Azure subscription 1(9ca0efa5-8365-45b3-a22a-ab092d085ff3)'
+        backendAzureRmResourceGroupName: 'adv360'
+        backendAzureRmStorageAccountName: 'viswaadotf'
+        backendAzureRmContainerName: 'test-tfstate'
+        backendAzureRmKey: 'test-terraform.tfstate'
+        
+    - task: TerraformTaskV4@4
+      displayName: TF validate
+      inputs:
+          provider: 'azurerm'
+          command: 'validate'
+        
+    - task: TerraformTaskV4@4
+      displayName: TF fmt
+      inputs:
+        provider: 'azurerm'
+        command: 'custom'
+        outputTo: 'console'
+        customCommand: 'fmt'
+        environmentServiceNameAzureRM: 'Azure subscription 1(9ca0efa5-8365-45b3-a22a-ab092d085ff3)'
+        
+    - task: TerraformTaskV4@4
+      displayName: TF plan
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        commandOptions: '-out $(Build.SourcesDirectory)/tfplanfile'
+        environmentServiceNameAzureRM: 'Azure subscription 1(9ca0efa5-8365-45b3-a22a-ab092d085ff3)'
+
+    - task: ArchiveFiles@2
+      displayName: Archive Files
+      inputs:
+        rootFolderOrFile: '$(Build.SourcesDirectory)'
+        includeRootFolder: true
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+          
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Files
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: '$(Build.BuildId)-build'
+        publishLocation: 'Container'     
+          
+          
